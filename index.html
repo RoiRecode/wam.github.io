@@ -1,124 +1,679 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Question</title>
+    <meta name="description" content="Статистика и профилактика инфаркта миокарда">
+    <title>Инфаркт миокарда: статистика и профилактика</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --red: #c62828;
+            --dark: #222;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --green: #2e7d32;
+            --orange: #ff8f00;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+            overflow-x: hidden;
+        }
+        header {
+            background: var(--red);
+            color: white;
+            padding: 1.5rem 0;
             text-align: center;
-            margin-top: 100px;
-            background-color: #f0f8ff;
-            transition: background-color 1s ease;
+            box-shadow: var(--shadow);
         }
-        #question {
-            font-size: 24px;
-            margin-bottom: 20px;
+        h1, h2, h3 {
+            margin-bottom: 1rem;
+            line-height: 1.2;
         }
-        button {
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 10px;
-            cursor: pointer;
+        h1 { font-size: clamp(1.5rem, 5vw, 2rem); }
+        h2 { font-size: clamp(1.3rem, 4vw, 1.7rem); color: var(--red); }
+        .container {
+            width: min(100% - 1rem, 1200px);
+            margin-inline: auto;
+            padding: 1rem 0;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .chart-wrapper {
+            width: 100%;
+            min-height: 300px;
             position: relative;
-            transition: transform 0.4s ease;
-            border: none;
-            border-radius: 5px;
+            margin: 1rem 0;
         }
-        #yes-btn {
-            background-color: #4CAF50;
-            color: white;
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
         }
-        #no-btn {
-            background-color: #f44336;
+        .gauge {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            margin: 1rem auto;
+        }
+        .gauge canvas {
+            max-height: 200px !important;
+        }
+        .gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--red);
+        }
+        .gauge-label {
+            text-align: center;
+            margin-top: -1rem;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid var(--orange);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        .prohibitions {
+            background: #ffebee;
+            border-left: 4px solid var(--red);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        ul, ol {
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        li {
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            line-height: 1.4;
+        }
+        .icon {
+            color: var(--red);
+            min-width: 22px;
+            text-align: center;
+            margin-top: 0.15rem;
+            font-size: 1rem;
+        }
+        footer {
+            background: var(--dark);
             color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
         }
         .hidden {
-            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s, transform 0.6s;
         }
-        #result-title {
-            font-size: 48px;
-            margin-top: 50px;
-            display: none;
+        .visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: rgba(198, 40, 40, 0.05);
+            border-radius: 6px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--red);
+            margin-bottom: 0.25rem;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        @media (max-width: 480px) {
+            .container {
+                width: min(100% - 0.5rem, 1200px);
+            }
+            .card {
+                padding: 1rem 0.75rem;
+            }
+            .chart-wrapper {
+                min-height: 250px;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            li {
+                padding-right: 0.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="question">ხვალ სასეირნოდ წამოხვალ?</div>
-    <button id="yes-btn">კი</button>
-    <button id="no-btn">არა</button>
-    <div id="result-title"></div>
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-heartbeat"></i> Инфаркт миокарда: статистика и профилактика</h1>
+            <p>Важная информация о заболевании, которое уносит миллионы жизней ежегодно</p>
+            <p>Site done by Roi</p>
+            <p>Stats From WHO</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="card hidden">
+            <h2><i class="fas fa-chart-bar"></i> Смертность от сердечно-сосудистых заболеваний</h2>
+            <div class="chart-wrapper">
+                <canvas id="mortalityChart"></canvas>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">32%</div>
+                    <div class="stat-label">Всех смертей</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">17.9м</div>
+                    <div class="stat-label">Ежегодно в мире</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">1:3</div>
+                    <div class="stat-label">Соотношение</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">+15%</div>
+                    <div class="stat-label">Рост за 10 лет</div>
+                </div>
+            </div>
+            
+            <div class="warning">
+                <h3><i class="fas fa-exclamation-triangle"></i> Важно знать!</h3>
+                <p>Инфаркт миокарда является одной из основных причин смертности в мире. Ежегодно от сердечно-сосудистых заболеваний умирает больше людей, чем от всех форм рака вместе взятых.</p>
+            </div>
+        </section>
+
+        <section class="grid">
+            <div class="card hidden">
+                <h3><i class="fas fa-skull-crossbones"></i> Основные факторы риска</h3>
+                <div class="chart-wrapper">
+                    <canvas id="riskFactorsChart"></canvas>
+                </div>
+                <div class="gauge" id="riskGauge">
+                    <div class="gauge-value">65%</div>
+                    <canvas id="riskGaugeCanvas"></canvas>
+                </div>
+                <div class="gauge-label">Общий риск при наличии факторов</div>
+            </div>
+            <div class="card hidden">
+                <h3><i class="fas fa-heart"></i> Выживаемость после инфаркта</h3>
+                <div class="chart-wrapper">
+                    <canvas id="survivalChart"></canvas>
+                </div>
+                <div class="gauge" id="survivalGauge">
+                    <div class="gauge-value">85%</div>
+                    <canvas id="survivalGaugeCanvas"></canvas>
+                </div>
+                <div class="gauge-label">Выживаемость в первый год</div>
+            </div>
+        </section>
+
+        <section class="card hidden">
+            <h2><i class="fas fa-ban"></i> Запреты и ограничения после инфаркта</h2>
+            <div class="prohibitions">
+                <h3><i class="fas fa-exclamation-circle"></i> Категорически запрещено:</h3>
+                <ul>
+                    <li><span class="icon"><i class="fas fa-smoking"></i></span> <strong>Курение</strong> - увеличивает риск повторного инфаркта на 50%</li>
+                    <li><span class="icon"><i class="fas fa-wine-glass-alt"></i></span> <strong>Алкоголь</strong> - более 30 мл чистого спирта в день</li>
+                    <li><span class="icon"><i class="fas fa-running"></i></span> <strong>Чрезмерные нагрузки</strong> - без контроля врача</li>
+                    <li><span class="icon"><i class="fas fa-hamburger"></i></span> <strong>Нездоровое питание</strong> - избыток жиров, соли и сахара</li>
+                    <li><span class="icon"><i class="fas fa-flushed"></i></span> <strong>Хронический стресс</strong> - требует специальной терапии</li>
+                </ul>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="prohibitionsChart"></canvas>
+            </div>
+        </section>
+
+        <section class="grid">
+            <div class="card hidden">
+                <h3><i class="fas fa-shield-alt"></i> Эффективность профилактики</h3>
+                <div class="chart-wrapper">
+                    <canvas id="preventionChart"></canvas>
+                </div>
+                <div class="gauge" id="preventionGauge">
+                    <div class="gauge-value">80%</div>
+                    <canvas id="preventionGaugeCanvas"></canvas>
+                </div>
+                <div class="gauge-label">Снижение риска при профилактике</div>
+            </div>
+            <div class="card hidden">
+                <h3><i class="fas fa-user-clock"></i> Статистика по возрасту</h3>
+                <div class="chart-wrapper">
+                    <canvas id="ageChart"></canvas>
+                </div>
+                <div class="gauge" id="ageGauge">
+                    <div class="gauge-value">65%</div>
+                    <canvas id="ageGaugeCanvas"></canvas>
+                </div>
+                <div class="gauge-label">Риск после 50 лет</div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p><i class="far fa-copyright"></i> 2025 Stats By WHO</p>
+            <p><small>Site By Roi And DEEPSEEK</small></p>
+        </div>
+    </footer>
 
     <script>
-        const noButton = document.getElementById("no-btn");
-        const yesButton = document.getElementById("yes-btn");
-        const questionDiv = document.getElementById("question");
-        const resultTitle = document.getElementById("result-title");
-        let noButtonClicks = 0;
-        let warningMessageDisplayed = false;
-
-        // Move the "არა" button within a 300px range
-        function moveNoButton() {
-            const randomX = Math.random() * 300 - 150; // Range: -150 to +150
-            const randomY = Math.random() * 300 - 150; // Range: -150 to +150
-
-            noButton.style.transform = `translate(${randomX}px, ${randomY}px)`;
+        // Ленивая загрузка Chart.js
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
         }
 
-        // Handle "არა" button click
-        noButton.addEventListener("click", () => {
-            if (noButtonClicks < 2) {
-                noButtonClicks++;
-            } else {
-                submitAnswer("არა");
-            }
+        // Инициализация при попадании в viewport
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const card = entry.target;
+                    card.classList.add('visible');
+                    
+                    // Загружаем Chart.js только когда нужен
+                    if (card.querySelector('canvas') && !window.Chart) {
+                        loadScript('https://cdn.jsdelivr.net/npm/chart.js').then(() => {
+                            loadScript('https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0').then(initCharts);
+                        });
+                    } else if (window.Chart) {
+                        initCharts();
+                    }
+                    
+                    // Инициализация gauge
+                    const gaugeId = card.querySelector('.gauge')?.id;
+                    if (gaugeId) {
+                        initGauge(gaugeId);
+                    }
+                }
+            });
+        }, { threshold: 0.1 });
+
+        // Наблюдаем за всеми карточками
+        document.querySelectorAll('.card').forEach(card => {
+            observer.observe(card);
         });
 
-        // Handle touchstart (mobile) and mouseover (desktop)
-        function handleMove(event) {
-            if (noButtonClicks < 2) {
-                moveNoButton();
-                event.preventDefault(); // Prevent accidental clicks/taps
-            }
-            if (!warningMessageDisplayed) {
-                warningMessageDisplayed = true;
-                questionDiv.textContent = "არ დამაჭირო!";
-            }
+        // Инициализация графиков
+        function initCharts() {
+            // Глобальные настройки Chart.js
+            Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif";
+            Chart.defaults.color = '#222';
+            Chart.defaults.aspectRatio = 1.5;
+
+            // График смертности
+            new Chart(document.getElementById('mortalityChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Сердечно-сосудистые', 'Онкологические', 'Респираторные', 'Диабет', 'Другие'],
+                    datasets: [{
+                        data: [32, 17, 7, 3, 41],
+                        backgroundColor: [
+                            'rgba(198, 40, 40, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(201, 203, 207, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.parsed.y + '% всех смертей'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 50,
+                            ticks: {
+                                callback: value => value + '%'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График факторов риска
+            new Chart(document.getElementById('riskFactorsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Курение', 'Высокое давление', 'Высокий холестерин', 'Диабет', 'Ожирение', 'Стресс'],
+                    datasets: [{
+                        data: [25, 20, 18, 15, 12, 10],
+                        backgroundColor: [
+                            'rgba(198, 40, 40, 0.7)',
+                            'rgba(244, 67, 54, 0.7)',
+                            'rgba(255, 152, 0, 0.7)',
+                            'rgba(156, 39, 176, 0.7)',
+                            'rgba(33, 150, 243, 0.7)',
+                            'rgba(76, 175, 80, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: {
+                                    size: window.innerWidth < 600 ? 10 : 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.label + ': ' + ctx.raw + '%'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График выживаемости
+            new Chart(document.getElementById('survivalChart'), {
+                type: 'line',
+                data: {
+                    labels: ['1 год', '3 года', '5 лет', '10 лет'],
+                    datasets: [{
+                        data: [85, 70, 55, 35],
+                        fill: false,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(198, 40, 40, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.parsed.y + '% пациентов'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: value => value + '%'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График запретов
+            new Chart(document.getElementById('prohibitionsChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['Курение', 'Алкоголь', 'Жирная пища', 'Соль', 'Стресс', 'Бездействие'],
+                    datasets: [{
+                        data: [50, 30, 40, 35, 45, 25],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => 'Увеличивает риск на ' + ctx.raw + '%'
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 60,
+                            ticks: {
+                                callback: value => value + '%',
+                                stepSize: 20
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График профилактики
+            new Chart(document.getElementById('preventionChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Здоровое питание', 'Физическая активность', 'Отказ от курения', 'Контроль давления', 'Контроль стресса'],
+                    datasets: [{
+                        data: [25, 20, 30, 15, 10],
+                        backgroundColor: [
+                            'rgba(76, 175, 80, 0.7)',
+                            'rgba(33, 150, 243, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(156, 39, 176, 0.7)',
+                            'rgba(121, 85, 72, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: {
+                                    size: window.innerWidth < 600 ? 10 : 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.label + ': снижает риск на ' + ctx.raw + '%'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График по возрасту
+            new Chart(document.getElementById('ageChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['До 40 лет', '40-50 лет', '50-60 лет', '60-70 лет', '70+ лет'],
+                    datasets: [{
+                        data: [5, 15, 30, 35, 15],
+                        backgroundColor: 'rgba(156, 39, 176, 0.7)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.parsed.y + '% случаев'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 40,
+                            ticks: {
+                                callback: value => value + '%'
+                            }
+                        }
+                    }
+                }
+            });
         }
 
-        // Handle hover for desktop
-        noButton.addEventListener("mouseover", handleMove);
-
-        // Handle touchstart for mobile
-        noButton.addEventListener("touchstart", handleMove);
-
-        // Handle "კი" button click
-        yesButton.addEventListener("click", () => {
-            submitAnswer("კი");
-        });
-
-        // Submit the answer
-        function submitAnswer(answer) {
-            // Hide the buttons
-            noButton.classList.add("hidden");
-            yesButton.classList.add("hidden");
-
-            // Change background and show result title
-            if (answer === "კი") {
-                document.body.style.backgroundColor = "green";
-                resultTitle.textContent = "მინდოდა ისე გამეკეთებინა რომ პასუხი ფოსტაზე მომვსლოდა მაგრამ ჯერ მარტო Front-end-ზე ვარ და ძალიან გთხოვ მომწერე";
-            } else if (answer === "არა") {
-                document.body.style.backgroundColor = "red";
-                resultTitle.textContent = ":(";
-            }
-            resultTitle.style.display = "block";
-
-            // Simulate sending an email with mailto
-            const email = "your-email@example.com"; // Replace with your email
-            const subject = "პასუხი კითხვაზე";
-            const body = `პასუხი კითხვაზე: ${answer}`;
-            window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        // Улучшенная инициализация индикаторов (игоки)
+        function initGauge(gaugeId) {
+            const value = parseInt(document.querySelector(`#${gaugeId} .gauge-value`).textContent);
+            const canvas = document.getElementById(`${gaugeId}Canvas`);
+            const ctx = canvas.getContext('2d');
+            
+            // Устанавливаем размеры canvas
+            const size = Math.min(canvas.parentElement.offsetWidth, 300);
+            canvas.width = size * 2;
+            canvas.height = size * 2;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            ctx.scale(2, 2);
+            
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.35;
+            const lineWidth = size * 0.07;
+            
+            // Цвета для градиента
+            const gradient = ctx.createLinearGradient(0, 0, size, 0);
+            gradient.addColorStop(0, '#ff5252');
+            gradient.addColorStop(0.5, '#ff9800');
+            gradient.addColorStop(1, '#4caf50');
+            
+            // Функция рисования gauge
+            const drawGauge = (progress) => {
+                // Очищаем canvas
+                ctx.clearRect(0, 0, size, size);
+                
+                // Рисуем фон
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0.75 * Math.PI, 2.25 * Math.PI);
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = '#f0f0f0';
+                ctx.stroke();
+                
+                // Рисуем заполнение с градиентом
+                ctx.beginPath();
+                const angle = 0.75 * Math.PI + (1.5 * Math.PI * (progress / 100));
+                ctx.arc(centerX, centerY, radius, 0.75 * Math.PI, angle);
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = gradient;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                
+                // Рисуем деления
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#999';
+                ctx.fillStyle = '#666';
+                ctx.font = (size * 0.05) + 'px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                for (let i = 0; i <= 100; i += 20) {
+                    const angle = 0.75 * Math.PI + (1.5 * Math.PI * (i / 100));
+                    const x1 = centerX + Math.cos(angle) * (radius - lineWidth/2 - 5);
+                    const y1 = centerY + Math.sin(angle) * (radius - lineWidth/2 - 5);
+                    const x2 = centerX + Math.cos(angle) * (radius + lineWidth/2 + 5);
+                    const y2 = centerY + Math.sin(angle) * (radius + lineWidth/2 + 5);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                    
+                    if (i % 20 === 0) {
+                        const textX = centerX + Math.cos(angle) * (radius + lineWidth + 20);
+                        const textY = centerY + Math.sin(angle) * (radius + lineWidth + 20);
+                        ctx.fillText(i + '%', textX, textY);
+                    }
+                }
+            };
+            
+            // Анимация
+            let progress = 0;
+            const duration = 1500; // 1.5 секунды
+            const startTime = performance.now();
+            
+            const animate = (currentTime) => {
+                const elapsedTime = currentTime - startTime;
+                progress = Math.min(value, (elapsedTime / duration) * value);
+                
+                drawGauge(progress);
+                
+                if (progress < value) {
+                    requestAnimationFrame(animate);
+                }
+            };
+            
+            requestAnimationFrame(animate);
         }
     </script>
 </body>
